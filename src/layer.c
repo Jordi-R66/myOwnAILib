@@ -9,11 +9,12 @@ static Value randomValue() {
 	return ((Value)rand() / (Value)RAND_MAX) * 2.0 - 1.0;
 }
 
-// Initialise les poids (W) avec une heuristique simple (type Xavier/Glorot simplifié)
-// pour éviter la saturation des gradients au début.
+// Initialise les poids (W) avec une heuristique (Xavier/Glorot simplifié)
+// Cela évite que les gradients explosent ou disparaissent lors des premières itérations.
 static void initWeights(MatrixPtr W) {
 	if (W->cols == 0) return;
 
+	// Scale factor = 1 / sqrt(InputSize)
 	Value scale = sqrt(1.0 / (Value)W->cols);
 
 	for (SizeT i = 0; i < W->size; i++) {
@@ -29,28 +30,26 @@ void initLayer(LayerPtr layer, SizeT inputSize, SizeT outputSize, ActivationType
 	layer->activation = activation;
 
 	// 1. Allocation des Poids (Matrice Out x In)
+	// createMatrix alloue et initialise à 0 (via calloc), mais on va remplir avec du random.
 	layer->weights = createMatrix(outputSize, inputSize);
 	initWeights(&layer->weights);
 
 	// 2. Allocation des Biais (Vecteur Out x 1)
-	// createVector utilise calloc en interne via createMatrix, donc initialisé à 0.0
+	// Initialisés à 0 par défaut, ce qui est une bonne pratique pour les biais.
 	layer->biases = createVector(outputSize);
 
-	// 3. Allocation des Caches (Vecteurs Out x 1 ou In x 1)
-	// Ils serviront à stocker les résultats intermédiaires pour la Backprop
-	layer->inputCache = createVector(inputSize);       // X
-	layer->outputCache = createVector(outputSize);     // Z
-	layer->activationCache = createVector(outputSize); // A
+	// 3. Allocation des Caches (pour stocker les valeurs lors du Forward)
+	layer->inputCache = createVector(inputSize);       // X (Entrée)
+	layer->outputCache = createVector(outputSize);     // Z (Avant activation)
+	layer->activationCache = createVector(outputSize); // A (Après activation)
 }
 
 void freeLayer(LayerPtr layer) {
-	// Le second paramètre 'false' indique qu'on ne libère pas le pointeur de structure lui-même
-	// car la structure Layer est stockée dans un tableau contigu dans NeuralNet.
-	// On libère uniquement le tableau 'data' interne de la matrice/vecteur.
-
+	// Le 'false' indique qu'on ne demande pas de "Wipe" (mise à 0 sécurisée) des données avant le free.
+	// Note : deallocMatrix ne libère que le buffer 'data', pas le pointeur 'weights' lui-même.
 	deallocMatrix(&layer->weights, false);
-	deallocVector(&layer->biases); // Macro ou cast vers deallocMatrix
 
+	deallocVector(&layer->biases);
 	deallocVector(&layer->inputCache);
 	deallocVector(&layer->outputCache);
 	deallocVector(&layer->activationCache);

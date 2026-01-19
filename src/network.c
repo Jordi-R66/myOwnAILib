@@ -1,7 +1,8 @@
 #include "network.h"
 #include <stdlib.h>
 #include <stdio.h>
-#include <maths/matrices/mlMatrix.h> // Pour relu, sigmoid
+// On inclut les fonctions d'activation définies dans myOwnCLib
+#include <maths/matrices/mlMatrix.h> 
 
 // --- Implémentation ---
 
@@ -9,21 +10,23 @@ NeuralNet createNeuralNet(SizeT inputSize) {
 	NeuralNet net;
 	net.inputSize = inputSize;
 	net.numLayers = 0;
-	net.capacity = 4; // Capacité initiale arbitraire (realloc si besoin)
+	net.capacity = 4; // Capacité initiale (arbitraire, sera agrandie si besoin)
 
 	// Allocation du tableau dynamique de couches
-	net.layers = (Layer*)malloc(sizeof(Layer) * net.capacity);
-
-	// Note: srand(time(NULL)) devrait être appelé une seule fois dans le main de l'utilisateur
+	net.layers = (Layer*)calloc(net.capacity, sizeof(Layer));
+	if (net.layers == NULL) {
+		fprintf(stderr, "Error: Failed to allocate memory for neural network layers.\n");
+		net.capacity = 0;
+	}
 
 	return net;
 }
 
 void neuralNetAddLayer(NeuralNetPtr net, SizeT outputSize, ActivationType activation) {
-	// Gestion de la capacité dynamique
+	// 1. Redimensionnement dynamique si le tableau est plein
 	if (net->numLayers >= net->capacity) {
-		net->capacity *= 2;
-		Layer* newLayers = (Layer*)realloc(net->layers, sizeof(Layer) * net->capacity);
+		SizeT newCapacity = net->capacity * 2;
+		Layer* newLayers = (Layer*)realloc(net->layers, newCapacity * sizeof(Layer));
 
 		if (newLayers == NULL) {
 			fprintf(stderr, "Error: Failed to reallocate memory for layers.\n");
@@ -31,18 +34,17 @@ void neuralNetAddLayer(NeuralNetPtr net, SizeT outputSize, ActivationType activa
 		}
 
 		net->layers = newLayers;
+		net->capacity = newCapacity;
 	}
 
-	// Récupération de la prochaine couche libre
+	// 2. Préparation de la nouvelle couche
 	LayerPtr layer = &net->layers[net->numLayers];
 
-	// Détermination de la taille d'entrée (InputSize)
-	// Si c'est la 1ère couche : InputSize du réseau
-	// Sinon : OutputSize de la couche précédente
-	SizeT layerInputSize = (net->numLayers == 0) ? net->inputSize : net->layers[net->numLayers - 1].outputSize;
+	// L'entrée de cette couche est la sortie de la précédente (ou l'entrée du réseau si c'est la 1ère)
+	SizeT currentInputSize = (net->numLayers == 0) ? net->inputSize : net->layers[net->numLayers - 1].outputSize;
 
-	// Initialisation via la fonction de layer.c
-	initLayer(layer, layerInputSize, outputSize, activation);
+	// 3. Initialisation via layer.c
+	initLayer(layer, currentInputSize, outputSize, activation);
 
 	net->numLayers++;
 }
@@ -53,27 +55,28 @@ VectorPtr neuralNetForward(NeuralNetPtr net, VectorPtr input) {
 	for (SizeT i = 0; i < net->numLayers; i++) {
 		LayerPtr layer = &net->layers[i];
 
-		// 1. Sauvegarde de l'entrée (X) pour la future Backpropagation
-		// On copie les données car currentInput est un pointeur qui changera
+		// 1. Sauvegarde de l'entrée (X) dans le cache pour la Backpropagation future
+		// On copie les données car le pointeur currentInput change à chaque tour
 		if (currentInput->data) {
-			// Suppose que inputCache a la bonne taille (garanti par initLayer)
-			// On copie les valeurs brutes
-			setMatrix(&layer->inputCache, currentInput->data);
+			// Utilise setVector (de vectors.h) pour copier les valeurs
+			setVector(&layer->inputCache, currentInput->data);
 		}
 
 		// 2. Calcul Z = W * X
-		// Résultat stocké dans outputCache (Z)
+		// outputCache (Z) recevra le résultat
+		// matrixMultiplication gère la dimension (Out x In) * (In x 1) -> (Out x 1)
 		matrixMultiplication(&layer->weights, &layer->inputCache, &layer->outputCache);
 
 		// 3. Ajout du Biais : Z = Z + B
-		// On utilise l'addition matricielle (les vecteurs sont des matrices)
+		// Les vecteurs sont des matrices, on peut utiliser matrixAddition
 		matrixAddition(&layer->outputCache, &layer->biases);
 
 		// 4. Activation : A = f(Z)
-		// D'abord, on copie Z dans A pour ne pas écraser Z (utile pour dZ plus tard)
-		setMatrix(&layer->activationCache, layer->outputCache.data);
+		// On copie d'abord Z dans A (activationCache) pour ne pas écraser Z
+		// (Z est nécessaire pour calculer dZ lors de la backprop)
+		setVector(&layer->activationCache, layer->outputCache.data);
 
-		// Application de la fonction d'activation
+		// Application de la fonction d'activation sur A
 		switch (layer->activation) {
 			case ACTIVATION_SIGMOID:
 				matrixMap(&layer->activationCache, sigmoid);
@@ -84,22 +87,22 @@ VectorPtr neuralNetForward(NeuralNetPtr net, VectorPtr input) {
 				break;
 
 			case ACTIVATION_SOFTMAX:
-				// vectorSoftmax est optimisé dans myOwnCLib/vectors.c
+				// Optimisé dans vectors.c
 				vectorSoftmax(&layer->activationCache);
 				break;
 
 			case ACTIVATION_NONE:
 
 			default:
-				// Linéaire : A = Z
+				// Rien à faire, A = Z (Linéaire)
 				break;
 		}
 
-		// La sortie de cette couche devient l'entrée de la suivante
+		// La sortie de cette couche (A) devient l'entrée de la suivante
 		currentInput = &layer->activationCache;
 	}
 
-	// Retourne le pointeur vers l'activation de la dernière couche
+	// Retourne le pointeur vers la sortie finale (cache de la dernière couche)
 	return currentInput;
 }
 
@@ -108,10 +111,12 @@ void freeNeuralNet(NeuralNetPtr net) {
 		for (SizeT i = 0; i < net->numLayers; i++) {
 			freeLayer(&net->layers[i]);
 		}
+
 		free(net->layers);
 		net->layers = NULL;
 	}
 
 	net->numLayers = 0;
 	net->capacity = 0;
+	net->inputSize = 0;
 }
