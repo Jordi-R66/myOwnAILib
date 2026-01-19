@@ -42,6 +42,10 @@ void initLayer(LayerPtr layer, SizeT inputSize, SizeT outputSize, ActivationType
 	layer->inputCache = createVector(inputSize);       // X (Entrée)
 	layer->outputCache = createVector(outputSize);     // Z (Avant activation)
 	layer->activationCache = createVector(outputSize); // A (Après activation)
+
+	layer->delta = createVector(outputSize);
+	layer->weightsGrad = createMatrix(outputSize, inputSize);
+	layer->biasesGrad = createVector(outputSize);
 }
 
 void freeLayer(LayerPtr layer) {
@@ -53,4 +57,7 @@ void freeLayer(LayerPtr layer) {
 	deallocVector(&layer->inputCache);
 	deallocVector(&layer->outputCache);
 	deallocVector(&layer->activationCache);
+	deallocVector(&layer->delta);
+	deallocMatrix(&layer->weightsGrad, false);
+	deallocVector(&layer->biasesGrad);
 }

@@ -18,20 +18,22 @@ typedef enum {
 
 // Structure d'une couche Dense (Fully Connected)
 typedef struct Layer {
-	// --- Paramètres (Appris par le réseau) ---
-	Matrix weights;  // Matrice des Poids W : [OutputSize x InputSize]
-	Vector biases;   // Vecteur des Biais B : [OutputSize x 1]
+	// ... (Champs existants: weights, biases, inputCache, outputCache, activationCache) ...
+	Matrix weights;
+	Vector biases;
 
-	// --- Cache pour la Backpropagation (Stockage des états) ---
-	// Ces vecteurs gardent en mémoire ce qui s'est passé lors du "Forward"
-	// pour pouvoir calculer les gradients lors du "Backward".
-	Vector inputCache;      // "X" : L'entrée reçue par la couche
-	Vector outputCache;     // "Z" : W.X + B (Résultat brut avant activation)
-	Vector activationCache; // "A" : f(Z) (Résultat final après activation)
+	Vector inputCache;
+	Vector outputCache;
+	Vector activationCache;
 
-	// --- Méta-données ---
-	SizeT inputSize;     // Nombre de neurones en entrée (couche précédente)
-	SizeT outputSize;    // Nombre de neurones dans cette couche
+	// --- Nouveaux Champs pour l'Apprentissage ---
+	Vector delta;       // "dZ" : Erreur de la couche (Gradient par rapport à Z)
+	Matrix weightsGrad; // "dW" : Gradient des poids accumulé
+	Vector biasesGrad;  // "db" : Gradient des biais accumulé
+
+	// ... (Méta-données: inputSize, outputSize, activation) ...
+	SizeT inputSize;
+	SizeT outputSize;
 	ActivationType activation;
 } Layer, *LayerPtr;
 #pragma pack()
