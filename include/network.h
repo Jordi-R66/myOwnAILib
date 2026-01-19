@@ -33,19 +33,32 @@ typedef struct NeuralNet {
 NeuralNet createNeuralNet(SizeT inputSize);
 
 // 2. Construction
-// Ajoute une couche Dense à la suite des autres
-// outputSize : Nombre de neurones de cette couche
-// activation : Fonction d'activation (ex: ACTIVATION_RELU)
+/**
+ * @brief Adds a layer to a given NeuralNet after the last one
+ * 
+ * @param net pointer to the neural net
+ * @param outputSize Number of neurons on the new layer
+ * @param activation Activation function
+ */
 void neuralNetAddLayer(NeuralNetPtr net, SizeT outputSize, ActivationType activation);
 
 // 3. Prédiction (Forward Propagation)
-// Fait traverser l'entrée 'input' à travers toutes les couches.
-// Retourne un pointeur vers le vecteur de sortie de la dernière couche.
-// (Attention : le pointeur retourné pointe vers le cache interne du réseau, ne pas le free directement)
+/**
+ * @brief Propagates the input vector through each layer
+ * 
+ * @param net Pointer to the neural net
+ * @param input Pointer to the input vector
+ * @return VectorPtr Pointer to the output vector
+ */
 VectorPtr neuralNetForward(NeuralNetPtr net, VectorPtr input);
 
 // 4. Nettoyage
-// Libère le réseau et toutes ses couches
+
+/**
+ * @brief Frees the NeuralNet and all its layers
+ * 
+ * @param net 
+ */
 void freeNeuralNet(NeuralNetPtr net);
 
 #endif
