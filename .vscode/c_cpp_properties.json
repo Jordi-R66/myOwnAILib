@@ -1,0 +1,78 @@
+{
+    "configurations": [
+        {
+            "name": "Linux64",
+            "includePath": [
+                "${workspaceFolder}/**", "include/", "external/*/"
+            ],
+            "defines": [
+                "_GNU_SOURCE"
+            ],
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "gnu17",
+            "cppStandard": "c++17",
+            "compilerArgs": [
+                "-m64", "-fshort-enums"
+            ],
+            "intelliSenseMode": "linux-gcc-x64"
+        },
+        {
+            "name": "Linux32",
+            "includePath": [
+                "${workspaceFolder}/**", "include/", "external/*/"
+            ],
+            "defines": [
+                "_GNU_SOURCE"
+            ],
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "gnu17",
+            "cppStandard": "c++17",
+            "compilerArgs": [
+                "-m32", "-fshort-enums"
+            ],
+            "intelliSenseMode": "linux-gcc-x86"
+        },
+        {
+            "name": "Win64 From Windows",
+            "includePath": [
+                "${workspaceFolder}/**", "include/", "external/*/"
+            ],
+            "compilerArgs": [
+                "-m64", "-fshort-enums"
+            ],
+            "compilerPath": "C:/Program Files/mingw64/bin/gcc.exe",
+            "intelliSenseMode": "windows-gcc-x64",
+            "cStandard": "c17",
+            "cppStandard": "c++17"
+        },
+        {
+            "name": "Win64 From Linux",
+            "includePath": [
+                "${workspaceFolder}/**", "include/", "external/*/"
+            ],
+            "compilerArgs": [
+                "-m64", "-fshort-enums"
+            ],
+            "compilerPath": "/usr/bin/x86_64-w64-mingw32-gcc",
+            "intelliSenseMode": "windows-gcc-x64",
+            "cStandard": "c17",
+            "cppStandard": "c++17"
+        },
+        {
+            "name": "Windows",
+            "includePath": [
+                "${workspaceFolder}/**", "include/", "external/*/"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE"
+            ],
+            "compilerPath": "C:/Program Files/mingw64/bin/gcc.exe",
+            "intelliSenseMode": "windows-gcc-x64",
+            "cStandard": "c17",
+            "cppStandard": "c++17"
+        }
+    ],
+    "version": 4
+}
