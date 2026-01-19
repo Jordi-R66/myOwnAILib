@@ -67,16 +67,23 @@ check_submodule:
 # 3. TESTS
 # ==========================================
 
-# Exemple de compilation d'un test
-# Utilisation: make test
+# Compile et lance chaque fichier de test individuellement
 test: $(TARGET_LIB)
 	@mkdir -p bin
-	@echo "🧪 Compiling tests..."
-	# On compile tous les fichiers .c dans tests/ et on les link avec la lib
-	$(CC) $(CFLAGS) $(TEST_DIR)/*.c -L. -lmyownailib $(LDFLAGS) -o bin/run_tests
-	@echo "🚀 Running tests..."
-	./bin/run_tests
-
+	@echo "🧪 Running Test Suite..."
+	@for file in $(TEST_DIR)/*.c; do \
+		test_name=$$(basename $$file .c); \
+		echo "--------------------------------------------------"; \
+		echo "🔨 Compiling $$test_name..."; \
+		$(CC) $(CFLAGS) $$file -L. -lmyownailib $(LDFLAGS) -o bin/$$test_name; \
+		if [ $$? -eq 0 ]; then \
+			echo "🚀 Running $$test_name..."; \
+			./bin/$$test_name; \
+		else \
+			echo "❌ Compilation failed for $$test_name"; \
+			exit 1; \
+		fi; \
+	done
 clean:
 	rm -f $(OBJS) $(TARGET_LIB)
 	rm -rf bin
