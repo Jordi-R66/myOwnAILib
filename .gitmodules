@@ -1,0 +1,3 @@
+[submodule "external/myOwnCLib"]
+	path = external/myOwnCLib
+	url = https://github.com/Jordi-R66/myOwnCLib.git
