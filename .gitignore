@@ -82,4 +82,4 @@ dkms.conf
 # Submodules manager
 submodules-manager.sh
 
-test/*
+#test/*
