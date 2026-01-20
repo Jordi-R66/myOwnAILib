@@ -11,7 +11,8 @@ int main() {
 	// 1. Création du réseau
 	NeuralNet net = createNeuralNet(2);
 	// Note: Pour XOR, 3 neurones cachés sont largement suffisants
-	neuralNetAddLayer(&net, 3, ACTIVATION_SIGMOID);
+	neuralNetAddLayer(&net, 50, ACTIVATION_RELU);
+	neuralNetAddLayer(&net, 50, ACTIVATION_RELU);
 	neuralNetAddLayer(&net, 1, ACTIVATION_SIGMOID);
 
 	// 2. Données
@@ -23,8 +24,8 @@ int main() {
 
 	// 3. Boucle d'apprentissage
 	// ON AUGMENTE : 100 000 époques, LR = 0.5
-	SizeT epochs = 500000;
-	double learningRate = 0.75;
+	SizeT epochs = 5000000;
+	double learningRate = 0.05;
 
 	printf("Entrainement (%zu epochs, LR=%.2f)...\n", epochs, learningRate);
 

@@ -1,51 +1,68 @@
 #include "layer.h"
 #include <stdlib.h>
-#include <math.h>
-
-// --- Helpers Privés ---
-
-// Génère une valeur aléatoire entre -1 et 1
-static Value randomValue() {
-	return ((Value)rand() / (Value)RAND_MAX) * 2.0 - 1.0;
-}
-
-// Initialise les poids (W) avec une heuristique (Xavier/Glorot simplifié)
-// Cela évite que les gradients explosent ou disparaissent lors des premières itérations.
-static void initWeights(MatrixPtr W) {
-	if (W->cols == 0) return;
-
-	// Scale factor = 1 / sqrt(InputSize)
-	Value scale = sqrt(1.0 / (Value)W->cols);
-
-	for (SizeT i = 0; i < W->size; i++) {
-		W->data[i] = randomValue() * scale;
-	}
-}
-
-// --- Implémentation ---
+#include <math.h> 
 
 void initLayer(LayerPtr layer, SizeT inputSize, SizeT outputSize, ActivationType activation) {
 	layer->inputSize = inputSize;
 	layer->outputSize = outputSize;
 	layer->activation = activation;
 
-	// 1. Allocation des Poids (Matrice Out x In)
-	// createMatrix alloue et initialise à 0 (via calloc), mais on va remplir avec du random.
+	// 1. Allocations de base
 	layer->weights = createMatrix(outputSize, inputSize);
-	initWeights(&layer->weights);
-
-	// 2. Allocation des Biais (Vecteur Out x 1)
-	// Initialisés à 0 par défaut, ce qui est une bonne pratique pour les biais.
 	layer->biases = createVector(outputSize);
 
-	// 3. Allocation des Caches (pour stocker les valeurs lors du Forward)
-	layer->inputCache = createVector(inputSize);       // X (Entrée)
-	layer->outputCache = createVector(outputSize);     // Z (Avant activation)
-	layer->activationCache = createVector(outputSize); // A (Après activation)
+	// Allocations des caches (inchangé)
+	layer->inputCache = createVector(inputSize);
+	layer->outputCache = createVector(outputSize);
+	layer->activationCache = createVector(outputSize);
 
 	layer->delta = createVector(outputSize);
 	layer->weightsGrad = createMatrix(outputSize, inputSize);
 	layer->biasesGrad = createVector(outputSize);
+
+	// 2. Initialisation Intelligente (He vs Xavier)
+	double limit = 0.0;
+	Value biasInit = 0.0;
+
+	switch (activation) {
+	case ACTIVATION_RELU:
+		// --- HE INITIALIZATION (Kaiming He) ---
+		// Idéal pour ReLU.
+		// Limite = sqrt(6 / n_in) pour une distribution uniforme.
+		limit = sqrt(6.0 / (double)inputSize);
+
+		// Biais légèrement positif pour éviter le "Dying ReLU" au démarrage
+		biasInit = 0.01;
+		break;
+
+	case ACTIVATION_SIGMOID:
+	case ACTIVATION_SOFTMAX:
+	case ACTIVATION_NONE:
+	default:
+		// --- XAVIER / GLOROT INITIALIZATION ---
+		// Idéal pour Sigmoid, Tanh, ou Softmax.
+		// Limite = sqrt(3 / n_in) pour une distribution uniforme.
+		// Note: La formule complète est souvent sqrt(6 / (n_in + n_out)), 
+		// mais sqrt(3 / n_in) fonctionne très bien et est plus standard.
+		limit = sqrt(3.0 / (double)inputSize);
+
+		// Biais à 0 pour laisser la sigmoïde centrée autour de 0.5 au début
+		biasInit = 0.0;
+		break;
+	}
+
+	// 3. Application des poids
+	for (SizeT i = 0; i < layer->weights.size; i++) {
+		// Random uniforme entre 0 et 1
+		double r = (double)rand() / (double)RAND_MAX;
+		// Projection dans [-limit, +limit]
+		layer->weights.data[i] = (r * 2.0 * limit) - limit;
+	}
+
+	// 4. Application des biais
+	for (SizeT i = 0; i < layer->biases.size; i++) {
+		layer->biases.data[i] = biasInit;
+	}
 }
 
 void freeLayer(LayerPtr layer) {
