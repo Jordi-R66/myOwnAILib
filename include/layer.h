@@ -4,7 +4,7 @@
 #define LAYER_INCLUDED 1
 
 // On inclut les maths depuis le submodule (grâce au -Iexternal/myOwnCLib du Makefile)
-#include <maths/matrices/matrix.h>
+#include <maths/matrices/mlMatrix.h>
 #include <maths/vectors/vectors.h>
 
 #pragma pack(1)
