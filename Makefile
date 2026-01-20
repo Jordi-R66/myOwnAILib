@@ -1,90 +1,52 @@
-# ==========================================
-# Makefile pour myOwnAILib
-# ==========================================
-
-# Compilateur et Options
 CC = gcc
-# -O3 : Optimisation maximale (Crucial pour les perfs ML)
-# -Iinclude : Pour inclure directement "network.h" qui est dans le dossier include/
-# -Iexternal/myOwnCLib : Pour pouvoir inclure <maths/matrices/matrix.h>
 CFLAGS = -O3 -Wall -Wextra -Iinclude -Iexternal/myOwnCLib
-
-# Bibliothèques à lier (Maths standard)
 LDFLAGS = -lm
 
-# Dossiers
-CLIB_DIR = external/myOwnCLib
-SRC_DIR = src
-TEST_DIR = tests
+# --- Sources ---
 
-# ==========================================
-# 1. SOURCES
-# ==========================================
+AI_SRCS = src/network.c \
+          src/layer.c
 
-# -> Sources du Moteur (myOwnCLib)
-# On sélectionne uniquement les fichiers mathématiques nécessaires
-SRCS_CLIB = $(CLIB_DIR)/maths/matrices/matrix.c \
-            $(CLIB_DIR)/maths/matrices/mlMatrix.c \
-            $(CLIB_DIR)/maths/vectors/vectors.c 
+CLIB_SRCS = external/myOwnCLib/maths/matrices/matrix.c \
+            external/myOwnCLib/maths/matrices/mlMatrix.c \
+            external/myOwnCLib/maths/vectors/vectors.c
 
-# -> Sources de l'Application (myOwnAILib)
-# Tous les fichiers .c dans src/ (network.c, layer.c, etc.)
-SRCS_AI = $(wildcard $(SRC_DIR)/*.c)
+ALL_SRCS = $(AI_SRCS) $(CLIB_SRCS)
 
-# Tous les objets à compiler (.c -> .o)
-OBJS = $(SRCS_CLIB:.c=.o) $(SRCS_AI:.c=.o)
+# --- Cibles ---
 
-# Nom de la librairie statique finale
-TARGET_LIB = libmyownailib.a
+.PHONY: all clean test
 
-# ==========================================
-# 2. RÈGLES
-# ==========================================
+# 'make all' compile tout mais ne lance rien
+all: test_xor test_forward test_save_load
 
-.PHONY: all clean test check_submodule
+# --- Règles de Compilation ---
 
-all: check_submodule $(TARGET_LIB)
+test_xor:
+	$(CC) $(CFLAGS) tests/test_xor.c $(ALL_SRCS) -o test_xor $(LDFLAGS)
 
-# Création de l'archive statique (.a)
-$(TARGET_LIB): $(OBJS)
-	@echo "📚 Archiving library $@..."
-	ar rcs $@ $^
-	@echo "✅ Library created successfully!"
+test_forward:
+	$(CC) $(CFLAGS) tests/test_forward.c $(ALL_SRCS) -o test_forward $(LDFLAGS)
 
-# Compilation générique des .c en .o
-%.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@
+test_save_load:
+	$(CC) $(CFLAGS) tests/test_save_load.c $(ALL_SRCS) -o test_save_load $(LDFLAGS)
 
-# Règle utilitaire pour vérifier que le submodule est là
-check_submodule:
-	@if [ ! -f "$(CLIB_DIR)/maths/matrices/matrix.c" ]; then \
-		echo "❌ Erreur: myOwnCLib introuvable ou vide."; \
-		echo "👉 Lancez: git submodule update --init --recursive"; \
-		exit 1; \
-	fi
+# --- Règle d'Exécution Globale ---
 
-# ==========================================
-# 3. TESTS
-# ==========================================
+# 'make test' compile tout (si nécessaire) puis lance les exécutables
+test: all
+	@echo "\n==================================="
+	@echo "    🚀 EXÉCUTION DES TESTS"
+	@echo "==================================="
+	@echo "\n--- [ 1/3 ] Test Forward ---"
+	@./test_forward
+	@echo "\n--- [ 2/3 ] Test Save/Load ---"
+	@./test_save_load
+	@echo "\n--- [ 3/3 ] Test XOR (Training) ---"
+	@./test_xor
+	@echo "\n✅ TOUS LES TESTS SONT TERMINÉS."
 
-# Compile et lance chaque fichier de test individuellement
-test: $(TARGET_LIB)
-	@mkdir -p bin
-	@echo "🧪 Running Test Suite..."
-	@for file in $(TEST_DIR)/*.c; do \
-		test_name=$$(basename $$file .c); \
-		echo "--------------------------------------------------"; \
-		echo "🔨 Compiling $$test_name..."; \
-		$(CC) $(CFLAGS) $$file -L. -lmyownailib $(LDFLAGS) -o bin/$$test_name; \
-		if [ $$? -eq 0 ]; then \
-			echo "🚀 Running $$test_name..."; \
-			./bin/$$test_name; \
-		else \
-			echo "❌ Compilation failed for $$test_name"; \
-			exit 1; \
-		fi; \
-	done
+# --- Nettoyage ---
+
 clean:
-	rm -f $(OBJS) $(TARGET_LIB)
-	rm -rf bin
-	@echo "🧹 Cleaned up."
+	rm -f test_xor test_forward test_save_load *.bin
