@@ -60,6 +60,10 @@ void neuralNetBackward(NeuralNetPtr net, VectorPtr target);
  */
 void neuralNetUpdate(NeuralNetPtr net, Value learningRate);
 
+// --- Import / Export ---
+// Retourne true en cas de succès, false sinon
+bool saveNeuralNet(NeuralNetPtr net, const char* filename);
+NeuralNet loadNeuralNet(const char* filename);
 
 /**
  * @brief Frees the NeuralNet and all its layers
