@@ -25,7 +25,7 @@ all: test_xor test_forward test_save_load
 test_xor:
 	$(CC) $(CFLAGS) tests/test_xor.c $(ALL_SRCS) -o test_xor.out $(LDFLAGS)
 	$(CC) $(CFLAGS) tests/test_xor.c $(ALL_SRCS) -S
-	@./test_forward.out
+	@./test_xor.out
 
 test_forward:
 	$(CC) $(CFLAGS) tests/test_forward.c $(ALL_SRCS) -o test_forward.out $(LDFLAGS)
@@ -35,7 +35,7 @@ test_forward:
 test_save_load:
 	$(CC) $(CFLAGS) tests/test_save_load.c $(ALL_SRCS) -o test_save_load.out $(LDFLAGS)
 	$(CC) $(CFLAGS) tests/test_save_load.c $(ALL_SRCS) -S
-	@./test_forward.out
+	@./test_save_load.out
 
 # --- Règle d'Exécution Globale ---
 
